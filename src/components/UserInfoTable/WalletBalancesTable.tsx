@@ -3,146 +3,146 @@ import DataTable from '../layout/DataTable';
 import { Button, Row } from 'antd';
 import { settleAllFunds } from '../../utils/send';
 import { notify } from '../../utils/notifications';
-import { useConnection } from '../../utils/connection';
+import { cancelOrder } from '../../utils/send';
 import { useWallet } from '../../utils/wallet';
-import {
-  useAllMarkets,
-  useSelectedTokenAccounts,
-  useTokenAccounts,
-} from '../../utils/markets';
-import StandaloneTokenAccountsSelect from '../StandaloneTokenAccountSelect';
-import { abbreviateAddress } from '../../utils/utils';
-import { PublicKey } from '@solana/web3.js';
+import { useSendConnection } from '../../utils/connection';
+import { notify } from '../../utils/notifications';
+import { DeleteOutlined } from '@ant-design/icons';
+import { OrderWithMarketAndMarketName } from '../../utils/types';
+import { useConnection } from '../../utils/connection';
 
-export default function WalletBalancesTable({
-  walletBalances,
+const CancelButton = styled(Button)`
+  color: #f23b69;
+  border: 1px solid #f23b69;
+`;
+
+export default function OpenOrderTable({
+  openOrders,
+  onCancelSuccess,
+  pageSize,
+  loading,
+  marketFilter,
 }: {
-  walletBalances: {
-    coin: string;
-    mint: string;
-    walletBalance: number;
-    openOrdersFree: number;
-    openOrdersTotal: number;
-  }[];
+  openOrders: OrderWithMarketAndMarketName[] | null | undefined;
+  onCancelSuccess?: () => void;
+  pageSize?: number;
+  loading?: boolean;
+  marketFilter?: boolean;
 }) {
-  const connection = useConnection();
-  const { wallet, connected } = useWallet();
-  const [selectedTokenAccounts] = useSelectedTokenAccounts();
-  const [tokenAccounts, tokenAccountsConnected] = useTokenAccounts();
-  const [allMarkets, allMarketsConnected] = useAllMarkets();
-  const [settlingFunds, setSettlingFunds] = useState(false);
+  let { wallet } = useWallet();
+  let connection = useSendConnection();
 
-  async function onSettleFunds() {
-    setSettlingFunds(true);
+  const [cancelId, setCancelId] = useState(null);
+
+  async function cancel(order) {
+    setCancelId(order?.orderId);
     try {
       if (!wallet) {
-        notify({
-          message: 'Wallet not connected',
-          description: 'Wallet not connected',
-          type: 'error',
-        });
-        return;
+        return null;
       }
 
-      if (!tokenAccounts || !tokenAccountsConnected) {
-        notify({
-          message: 'Error settling funds',
-          description: 'TokenAccounts not connected',
-          type: 'error',
-        });
-        return;
-      }
-      if (!allMarkets || !allMarketsConnected) {
-        notify({
-          message: 'Error settling funds',
-          description: 'Markets not connected',
-          type: 'error',
-        });
-        return;
-      }
-      await settleAllFunds({
+      await cancelOrder({
+        order,
+        market: order.market,
         connection,
-        tokenAccounts,
-        selectedTokenAccounts,
         wallet,
-        markets: allMarkets.map((marketInfo) => marketInfo.market),
       });
     } catch (e) {
       notify({
-        message: 'Error settling funds',
+        message: 'Error cancelling order',
         description: e.message,
         type: 'error',
       });
+      return;
     } finally {
-      setSettlingFunds(false);
+      setCancelId(null);
     }
+    onCancelSuccess && onCancelSuccess();
   }
+
+  const marketFilters = [
+    ...new Set((openOrders || []).map((orderInfos) => orderInfos.marketName)),
+  ].map((marketName) => {
+    return { text: marketName, value: marketName };
+  });
 
   const columns = [
     {
-      title: 'Coin',
-      key: 'coin',
-      width: '20%',
-      render: (walletBalance) => (
-        <Row align="middle">
-          <a
-            href={`https://solscan.io/address/${walletBalance.mint}`}
-            target={'_blank'}
-            rel="noopener noreferrer"
-          >
-            {walletBalance.coin ||
-              abbreviateAddress(new PublicKey(walletBalance.mint))}
-          </a>
-        </Row>
+      title: 'Market',
+      dataIndex: 'marketName',
+      key: 'marketName',
+      filters: marketFilter ? marketFilters : undefined,
+      onFilter: (value, record) => record.marketName.indexOf(value) === 0,
+    },
+    {
+      title: 'Side',
+      dataIndex: 'side',
+      key: 'side',
+      render: (side) => (
+        <Tag
+          color={side === 'buy' ? '#41C77A' : '#F23B69'}
+          style={{ fontWeight: 700 }}
+        >
+          {side.charAt(0).toUpperCase() + side.slice(1)}
+        </Tag>
       ),
+      sorter: (a, b) => {
+        if (a.side === b.side) {
+          return 0;
+        } else if (a.side === 'buy') {
+          return 1;
+        } else {
+          return -1;
+        }
+      },
+      showSorterTooltip: false,
     },
     {
-      title: 'Wallet Balance',
-      dataIndex: 'walletBalance',
-      key: 'walletBalance',
-      width: '20%',
+      title: 'Size',
+      dataIndex: 'size',
+      key: 'size',
+      sorter: (a, b) => b.size - a.size,
+      showSorterTooltip: false,
     },
     {
-      title: 'Open orders total balances',
-      dataIndex: 'openOrdersTotal',
-      key: 'openOrdersTotal',
-      width: '20%',
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      sorter: (a, b) => b.price - a.price,
+      showSorterTooltip: false,
     },
     {
-      title: 'Unsettled balances',
-      dataIndex: 'openOrdersFree',
-      key: 'openOrdersFree',
-      width: '20%',
-    },
-    {
-      title: 'Selected token account',
-      key: 'selectTokenAccount',
-      width: '20%',
-      render: (walletBalance) => (
-        <Row align="middle" style={{ width: '430px' }}>
-          <StandaloneTokenAccountsSelect
-            accounts={tokenAccounts?.filter(
-              (t) => t.effectiveMint.toBase58() === walletBalance.mint,
-            )}
-            mint={walletBalance.mint}
-          />
-        </Row>
+      key: 'orderId',
+      render: (order) => (
+        <div style={{ textAlign: 'right' }}>
+          <CancelButton
+            icon={<DeleteOutlined />}
+            onClick={() => cancel(order)}
+            loading={cancelId + '' === order?.orderId + ''}
+          >
+            Cancel
+          </CancelButton>
+        </div>
       ),
     },
   ];
+  const dataSource = (openOrders || []).map((order) => ({
+    ...order,
+    key: order.orderId,
+  }));
+
   return (
-    <React.Fragment>
-      <DataTable
-        emptyLabel="No balances"
-        dataSource={walletBalances}
-        columns={columns}
-        pagination={false}
-      />
-      {connected && (
-        <Button onClick={onSettleFunds} loading={settlingFunds}>
-          Settle all funds
-        </Button>
-      )}
-    </React.Fragment>
+    <Row>
+      <Col span={24}>
+        <DataTable
+          emptyLabel="No open orders"
+          dataSource={dataSource}
+          columns={columns}
+          pagination={true}
+          pageSize={pageSize ? pageSize : 5}
+          loading={loading !== undefined && loading}
+        />
+      </Col>
+    </Row>
   );
 }
