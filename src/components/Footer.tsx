@@ -24,7 +24,7 @@ export const CustomFooter = () => {
   return (
     <Footer
       style={{
-        height: '55px',
+        height: '45px',
         paddingBottom: 10,
         paddingTop: 10,
       }}
