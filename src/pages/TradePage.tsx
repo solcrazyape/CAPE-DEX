@@ -26,12 +26,6 @@ import { notify } from '../utils/notifications';
 import { useHistory, useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 
-import { TVChartContainer } from '../components/TradingView';
-// Use following stub for quick setup without the TradingView private dependency
-// function TVChartContainer() {
-//   return <></>
-// }
-
 const { Option, OptGroup } = Select;
 
 const Wrapper = styled.div`
@@ -84,7 +78,7 @@ function TradePageInner() {
   });
 
   useEffect(() => {
-    document.title = marketName ? `${marketName} — Serum` : 'Serum';
+    document.title = marketName ? `${marketName} — CAPE DEX` : 'CAPE DEX';
   }, [marketName]);
 
   const changeOrderRef = useRef<
@@ -182,13 +176,13 @@ function TradePageInner() {
                 title="Market address"
                 trigger="click"
               >
-                <InfoCircleOutlined style={{ color: '#2abdd2' }} />
+                <InfoCircleOutlined style={{ color: '#D55FEF' }} />
               </Popover>
             </Col>
           ) : null}
           <Col>
             <PlusCircleOutlined
-              style={{ color: '#2abdd2' }}
+              style={{ color: '#D55FEF' }}
               onClick={() => setAddMarketVisible(true)}
             />
           </Col>
@@ -262,7 +256,7 @@ function MarketSelector({
               style={{
                 padding: '10px',
                 // @ts-ignore
-                backgroundColor: i % 2 === 0 ? 'rgb(39, 44, 61)' : null,
+                backgroundColor: i % 2 === 0 ? 'rgb(53, 18, 106)' : null,
               }}
             >
               <Row>
@@ -308,7 +302,7 @@ function MarketSelector({
               style={{
                 padding: '10px',
                 // @ts-ignore
-                backgroundColor: i % 2 === 0 ? 'rgb(39, 44, 61)' : null,
+                backgroundColor: i % 2 === 0 ? 'rgb(53, 18, 106)' : null,
               }}
             >
               {name} {deprecated ? ' (Deprecated)' : null}
@@ -341,10 +335,8 @@ const RenderNormal = ({ onChangeOrderRef, onPrice, onSize }) => {
         flexWrap: 'nowrap',
       }}
     >
-      <Col flex="auto" style={{ height: '50vh' }}>
-        <Row style={{ height: '100%' }}>
-          <TVChartContainer />
-        </Row>
+      <Col flex="auto" style={{ height: '100%', display: 'flex' }}>
+        <UserInfoTable />
         <Row style={{ height: '70%' }}>
           <UserInfoTable />
         </Row>
@@ -367,9 +359,6 @@ const RenderNormal = ({ onChangeOrderRef, onPrice, onSize }) => {
 const RenderSmall = ({ onChangeOrderRef, onPrice, onSize }) => {
   return (
     <>
-      <Row style={{ height: '30vh' }}>
-        <TVChartContainer />
-      </Row>
       <Row
         style={{
           height: '900px',
@@ -406,9 +395,6 @@ const RenderSmall = ({ onChangeOrderRef, onPrice, onSize }) => {
 const RenderSmaller = ({ onChangeOrderRef, onPrice, onSize }) => {
   return (
     <>
-      <Row style={{ height: '50vh' }}>
-        <TVChartContainer />
-      </Row>
       <Row>
         <Col xs={24} sm={12} style={{ height: '100%', display: 'flex' }}>
           <TradeForm style={{ flex: 1 }} setChangeOrderRef={onChangeOrderRef} />
