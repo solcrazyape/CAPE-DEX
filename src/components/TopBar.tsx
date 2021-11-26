@@ -47,7 +47,6 @@ const EXTERNAL_LINKS = {
   '/dex-list': 'https://serum-academy.com/en/dex-list/',
   '/crazy-city': 'https://city.crazyapecoin.com/',
   '/explorer': 'https://solanabeach.io/token/GpYMp8eP3HADY8x1jLVfFVBVYqxFNxT5mFhZAZt9Poco',
-  '/swap': 'https://swap.crazyapecoin.com/',
 };
 
 export default function TopBar() {
