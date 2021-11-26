@@ -21,7 +21,6 @@ export default function BalancesTable({
   const { wallet } = useWallet();
   const { usdcRef, usdtRef } = useReferrer();
   async function onSettleFunds(market, openOrders) {
- const { usdcRef, usdtRef } = useReferrer();
     try {
       await settleFunds({
         market,
@@ -36,6 +35,8 @@ export default function BalancesTable({
           accounts,
           market?.quoteMintAddress,
         ),
+        usdcRef,
+        usdtRef,
       });
     } catch (e) {
       notify({
